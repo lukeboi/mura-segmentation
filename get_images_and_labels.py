@@ -31,9 +31,8 @@ for path in Path(folder).rglob("*" + labeled_ending):
 # write dictionary of image paths to csv file
 try:
     with open(csv_name, 'w') as csv_file:
-        writer = csv.writer(csv_file)
-        for key, value in images_dict.items():
-            writer.writerow([key, value])
+        w = csv.writer(csv_file)
+        w.writerows(images_dict.items())
 except IOError:
     print("I/O error")
 
