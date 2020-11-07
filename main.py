@@ -35,7 +35,7 @@ csv_name = "images.csv"
 num_classes = 2
 batch_size = 4
 image_size = (512, 512)
-validation_set_length = 8
+validation_set_length = 16
 
 
 # load image paths from csv file
@@ -53,14 +53,13 @@ class ImageHandler(keras.utils.Sequence):
         self.batch_size = batch_size
         self.image_size = image_size
         self.image_paths = image_paths
-        self.num_image_augmentations = 2 # the first is the original image, second is horizontal flip
 
     def __len__(self):
-        return (len(self.image_paths) * self.num_image_augmentations) // self.batch_size
+        return len(self.image_paths) // self.batch_size
 
     def __getitem__(self, idx):
         """Returns tuple (input, target) correspond to batch #idx."""
-        i = (idx % len(image_paths)) * self.batch_size
+        i = idx
 
         batch_input_img_paths = list(self.image_paths.keys())[i: i + self.batch_size]
         batch_target_img_paths = list(self.image_paths.values())[i: i + self.batch_size]
@@ -78,7 +77,10 @@ class ImageHandler(keras.utils.Sequence):
             # set the image in the array
             x[j] = np.expand_dims(img_arr / 255, 2)
 
+            # if(i > len(self) / self.num_augmentations):
             # displays the image for debugging
+            # print(img_arr[:20,:20])
+            # pImage.fromarray(x[j][:,:,0] * 255).show()
             # pImage.fromarray(x[j][:,:,0], mode="I").show()
 
         y = np.zeros((self.batch_size,) + self.image_size + (1,), dtype="uint8")
@@ -165,23 +167,22 @@ def unet(pretrained_weights=None, input_size=(512, 512, 1)):
 
     return model
 
+
 # expects an np array of size (width, height, 1)
 def display_image(img):
     pImage.fromarray(np.uint8(img[:, :, 0] * 255), mode="L").show()
+
 
 # split our image paths into training and validation image paths
 validation_image_paths = dict(list(image_paths.items())[:validation_set_length])
 train_image_paths = dict(list(image_paths.items())[validation_set_length:])
 
-print(train_image_paths)
-print(validation_image_paths)
 
 # create our image handler classes
 train_images = ImageHandler(batch_size, image_size, train_image_paths)
 validation_images = ImageHandler(batch_size, image_size, validation_image_paths)
 
-print(train_image_paths.keys())
-print(validation_image_paths.keys())
+print("LEN  " + str(len(train_images)))
 
 # create our model
 model = unet()
@@ -191,14 +192,20 @@ callbacks = [
 ]
 
 # Train the model, doing validation at the end of each epoch.
-epochs = 10
+epochs = 15
 model.fit(train_images, epochs=epochs, validation_data=validation_images, callbacks=callbacks)
 
 validation_predictions = model.predict(validation_images)
 print(validation_predictions.shape)
 
 for i in range(0, len(validation_image_paths)):
-    print(i)
-    load_img(list(validation_images.image_paths.keys())[i], color_mode="grayscale").show()
-    display_image(validation_predictions[i])
+    image = pImage.open(list(validation_image_paths.keys())[i])
+    image_handler = ImageHandler(1, image_size, {list(validation_image_paths.keys())[i] : list(validation_image_paths.values())[i]})
+    prediction = model.predict(image_handler)
+    predicted_image = pImage.fromarray(np.uint8(prediction[0][:, :, 0] * 255), mode="L")
+
+    combined_image = pImage.new("I", (image_size[0] * 2, image_size[1]))
+    combined_image.paste(image, (0,0))
+    combined_image.paste(predicted_image, (image_size[0], 0))
+    combined_image.show()
     k = input()
