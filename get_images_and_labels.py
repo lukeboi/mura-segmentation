@@ -10,7 +10,8 @@ Author: Luke Farritor 10/25/20
 from pathlib import Path
 import csv
 
-folders = ["body_not_body_segmented", "augmented"]
+# folders = ["body_not_body_segmented", "augmented"]
+folders = ["body_not_body_segmented"]
 unlabeled_ending = ".png"
 labeled_ending = "-labeled.png"
 csv_name = "images.csv"
