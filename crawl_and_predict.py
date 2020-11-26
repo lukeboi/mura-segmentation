@@ -7,6 +7,7 @@ from tensorflow.python.keras.models import Model
 from keras.models import load_model
 from tensorflow import keras
 from PIL import Image as pImage
+from PIL import ImageEnhance
 import numpy as np
 import tensorflow as tf
 
@@ -60,8 +61,10 @@ print(all_images)
 
 model = load_model("trained_model")
 
+# brightness = ImageEnhance.Brightness()
+
 for i in all_images:
-    img = load_img(path, color_mode="grayscale")
+    img = load_img(i, color_mode="grayscale")
 
     # pad the image to 512
     img_arr = np.array(img)
@@ -74,10 +77,15 @@ for i in all_images:
     # set the image in the array
     prediction = model.predict(np.expand_dims(img_arr / 255, 2).reshape(1, 512, 512, 1))
 
-    predicted_image = pImage.fromarray(np.uint8(prediction[:, :, 0] * 255), mode="L")
+    print(prediction.shape)
+
+    predicted_image = pImage.fromarray(np.uint8(prediction[0, :, :, 0] * 255), mode="L")
+    predicted_image = np.array(predicted_image)
+    predicted_image = pImage.fromarray((predicted_image - 91), mode="L")
+    print(np.amax(np.array(predicted_image)))
 
     combined_image = pImage.new("I", (image_size[0] * 2, image_size[1]))
-    # combined_image.paste(image, (0, 0))
+    combined_image.paste(img, (0, 0))
     combined_image.paste(predicted_image, (image_size[0], 0))
     combined_image.show()
     k = input()

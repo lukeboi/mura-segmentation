@@ -153,7 +153,7 @@ callbacks = [
 ]
 
 # Train the model, doing validation at the end of each epoch.
-epochs = 40
+epochs = 80
 model.fit(train_images, epochs=epochs, validation_data=validation_images, callbacks=callbacks)
 
 model.save("trained_model")
