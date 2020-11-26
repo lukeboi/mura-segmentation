@@ -20,6 +20,7 @@ import tensorflow as tf
 from keras.models import load_model
 from tensorflow.python.keras.optimizer_v2.adam import Adam
 import numpy as np
+import realtime_augmentation
 
 # setup GPU
 config = tf.compat.v1.ConfigProto(gpu_options=
@@ -48,99 +49,15 @@ image_paths = get_image_paths()
 
 
 class ImageHandler(keras.utils.Sequence):
-    """Helper to iterate over the data (as Numpy arrays)."""
-
-    def __init__(self, batch_size, image_size, image_paths):
-        self.batch_size = batch_size
-        self.image_size = image_size
-        self.image_paths = image_paths
-        self.num_augmentations = 9  # including the normal image
+    def __init__(self, batch_size, image_size, image_paths, size, do_augs):
+        self.imageLoader = realtime_augmentation.ImageLoader(image_size, image_paths, do_augs)
+        self.size = size
 
     def __len__(self):
-        return (len(self.image_paths) // self.batch_size) * self.num_augmentations
+        return self.size
 
     def __getitem__(self, idx):
-        """Returns tuple (input, target) correspond to batch #idx."""
-        # i = idx % ((len(self) // self.num_augmentations) // self.batch_size)
-        i = (((idx) * self.batch_size) // (self.num_augmentations))
-        aug_id = idx % self.num_augmentations
-        # aug_id = (idx * self.batch_size) // len(self.image_paths)
-
-        # if(idx == 20):
-        print(" " + str(i) + " " + str(idx * batch_size) + " " + str(idx) + " " + str(len(self.image_paths)))
-
-        batch_input_img_paths = list(self.image_paths.keys())[i : i + self.batch_size]
-        batch_target_img_paths = list(self.image_paths.values())[i : i + self.batch_size]
-
-        x = np.zeros((self.batch_size,) + self.image_size + (1,), dtype="float32")
-        for j, path in enumerate(batch_input_img_paths):
-            img = load_img(path, color_mode="grayscale")
-            img = self.perform_augmentation(img, aug_id)
-
-            # pad the image to 512
-            img_arr = np.array(img)
-            img_arr = np.pad(img_arr,
-                             ((0, self.image_size[0] - img_arr.shape[0]), (0, self.image_size[1] - img_arr.shape[1])),
-                             mode='constant')
-
-            # set the image in the array
-            x[j] = np.expand_dims(img_arr / 255, 2)
-
-            # if(i > len(self) / self.num_augmentations):
-            # displays the image for debugging
-            # print(img_arr[:20,:20])
-            # below image eventually saves whole dataset to folder, very helpful for debugging
-            if(len(self) == 63):
-                pImage.fromarray(x[j][:,:,0] * 255).convert('RGB').save("./test_images/" + str(i) + "_" + str(aug_id) + ".png")
-            # pImage.fromarray(x[j][:,:,0], mode="I").save("./test_images")
-
-        y = np.zeros((self.batch_size,) + self.image_size + (1,), dtype="uint8")
-        for j, path in enumerate(batch_target_img_paths):
-            img = load_img(path, color_mode="grayscale")
-            img = self.perform_augmentation(img, aug_id)
-
-            # pad the image to 512
-            img_arr = np.array(img)
-            img_arr = np.pad(img_arr,
-                             ((0, self.image_size[0] - img_arr.shape[0]), (0, self.image_size[1] - img_arr.shape[1])),
-                             mode='constant')
-
-            # set the image in the array
-            y[j] = np.expand_dims(img_arr / 255, 2)
-
-        return x, y
-
-    def perform_augmentation(self, img, aug):
-        if aug == 1:
-            # horizontal flip
-            img = img.transpose(PIL.Image.FLIP_LEFT_RIGHT)
-        if aug == 2:
-            # vertical fip
-            img = img.transpose(PIL.Image.FLIP_TOP_BOTTOM)
-        if aug == 3:
-            # horizontal vertical flip
-            img = img.transpose(PIL.Image.FLIP_TOP_BOTTOM)
-            img = img.transpose(PIL.Image.FLIP_LEFT_RIGHT)
-        if aug == 4:
-            # 90 degree rotation
-            img = img.transpose(PIL.Image.ROTATE_90)
-        if aug == 5:
-            # 180 degree rotation
-            img = img.transpose(PIL.Image.ROTATE_180)
-        if aug == 6:
-            # 270 degree rotation
-            img = img.transpose(PIL.Image.ROTATE_270)
-        if aug == 7:
-            # horizontal shrink
-            img = img.resize((int(img.size[0] / 2), img.size[1]))
-        if aug == 8:
-            # vertical shrink
-            img = img.resize((img.size[0], int(img.size[1] / 2)))
-
-        # img.show()
-        return img
-
-
+        return self.imageLoader.get_random_batch(batch_size)
 
 
 def unet(pretrained_weights=None, input_size=(512, 512, 1)):
@@ -202,6 +119,7 @@ def unet(pretrained_weights=None, input_size=(512, 512, 1)):
     model = Model(inputs, conv10)
 
     model.compile(optimizer=Adam(lr=1e-4), loss='binary_crossentropy', metrics=['accuracy'])
+    # model.compile(optimizer=Adam(lr=5e-5), loss='binary_crossentropy', metrics=['accuracy'])
 
     model.summary()
 
@@ -222,8 +140,8 @@ train_image_paths = dict(list(image_paths.items())[validation_set_length:])
 
 
 # create our image handler classes
-train_images = ImageHandler(batch_size, image_size, train_image_paths)
-validation_images = ImageHandler(batch_size, image_size, validation_image_paths)
+train_images = ImageHandler(batch_size, image_size, train_image_paths, 75, True)
+validation_images = ImageHandler(batch_size, image_size, validation_image_paths, 10, False)
 
 print("LEN  " + str(len(train_images)))
 
@@ -235,38 +153,17 @@ callbacks = [
 ]
 
 # Train the model, doing validation at the end of each epoch.
-epochs = 20
+epochs = 40
 model.fit(train_images, epochs=epochs, validation_data=validation_images, callbacks=callbacks)
 
-# other method im trying
-# data_gen_args = ImageDataGenerator(
-#     horizontal_flip=True,
-#     vertical_flip=True,
-#     fill_mode='constant',
-#     cval=0,
-#     rotation_range=360
-# )
-# xray_datagen = ImageDataGenerator(**data_gen_args)
-# mask_datagen = ImageDataGenerator(**data_gen_args)
-#
-# seed = 1
-# xray_datagen.fit(images, augment=True, seed=seed)
-# mask_datagen.fit(masks, augment=True, seed=seed)
-# xray_generator = xray_datagen.flow_from_directory(
-#     'data/images',
-#     class_mode=None,
-#     seed=seed)
-# mask_generator = mask_datagen.flow_from_directory(
-#     'data/masks',
-#     class_mode=None,
-#     seed=seed)
+model.save("trained_model")
 
 validation_predictions = model.predict(validation_images)
 print(validation_predictions.shape)
 
 for i in range(0, len(validation_image_paths)):
     image = pImage.open(list(validation_image_paths.keys())[i])
-    image_handler = ImageHandler(1, image_size, {list(validation_image_paths.keys())[i] : list(validation_image_paths.values())[i]})
+    image_handler = ImageHandler(1, image_size, {list(validation_image_paths.keys())[i] : list(validation_image_paths.values())[i]}, 1, False)
     prediction = model.predict(image_handler)
     predicted_image = pImage.fromarray(np.uint8(prediction[0][:, :, 0] * 255), mode="L")
 
