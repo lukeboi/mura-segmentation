@@ -9,6 +9,7 @@ Author: Luke Farritor 10/25/20
 
 from pathlib import Path
 import csv
+import random
 
 # folders = ["body_not_body_segmented", "augmented"]
 folders = ["body_not_body_segmented"]
@@ -36,7 +37,11 @@ def find_images():
         try:
             with open(csv_name, 'w') as csv_file:
                 w = csv.writer(csv_file)
-                w.writerows(images_dict.items())
+                randomized = list(images_dict.items())
+                random.shuffle(randomized)
+                randomized = dict(randomized)
+                print(randomized)
+                w.writerows(randomized.items())
         except IOError:
             print("I/O error")
 

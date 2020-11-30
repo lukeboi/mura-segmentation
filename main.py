@@ -32,12 +32,24 @@ session = tf.compat.v1.Session(config=config)
 tf.compat.v1.keras.backend.set_session(session)
 gpus = tf.config.experimental.list_physical_devices('GPU')
 
+# gpus = tf.config.experimental.list_physical_devices('GPU')
+# if gpus:
+#   try:
+#     # Currently, memory growth needs to be the same across GPUs
+#     for gpu in gpus:
+#       tf.config.experimental.set_memory_growth(gpu, True)
+#     logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+#     print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+#   except RuntimeError as e:
+#     # Memory growth must be set before GPUs have been initialized
+#     print(e)
+
 # variables
 csv_name = "images.csv"
 num_classes = 2
 batch_size = 4
 image_size = (512, 512)
-validation_set_length = 16
+validation_set_length = 32
 
 
 # load image paths from csv file
@@ -120,6 +132,7 @@ def unet(pretrained_weights=None, input_size=(512, 512, 1)):
 
     model.compile(optimizer=Adam(lr=1e-4), loss='binary_crossentropy', metrics=['accuracy'])
     # model.compile(optimizer=Adam(lr=5e-5), loss='binary_crossentropy', metrics=['accuracy'])
+    # model.compile(optimizer=Adam(lr=1e-2), loss='binary_crossentropy', metrics=['accuracy'])
 
     model.summary()
 
@@ -140,8 +153,8 @@ train_image_paths = dict(list(image_paths.items())[validation_set_length:])
 
 
 # create our image handler classes
-train_images = ImageHandler(batch_size, image_size, train_image_paths, 75, True)
-validation_images = ImageHandler(batch_size, image_size, validation_image_paths, 10, False)
+train_images = ImageHandler(batch_size, image_size, train_image_paths, 400, True)
+validation_images = ImageHandler(batch_size, image_size, validation_image_paths, validation_set_length, False)
 
 print("LEN  " + str(len(train_images)))
 
@@ -153,7 +166,7 @@ callbacks = [
 ]
 
 # Train the model, doing validation at the end of each epoch.
-epochs = 80
+epochs = 25
 model.fit(train_images, epochs=epochs, validation_data=validation_images, callbacks=callbacks)
 
 model.save("trained_model")
