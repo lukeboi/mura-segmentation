@@ -64,16 +64,37 @@ class ImageLoader():
         return x, y
 
     def perform_augmentation(self, img, seed, image_size):
+        random.seed(seed)
+
         # pad image to 512
         padded_bg = pImage.new("L", image_size, 0)
         padded_bg.paste(img)
         img = padded_bg
 
         if not self.perform_augmentations:
-            return img
+            # only pad image to 512
+            padded_bg = pImage.new("L", image_size, 0)
+            padded_bg.paste(img)
+            return padded_bg
 
-        random.seed(seed)
+        # apply random offset and scaling
+        bg = pImage.new("L", image_size, 0)
 
+        # scale randomly between 0.5 and 1.5
+        scale_factor = random.uniform(0.8, 1.3)
+        h_scale = random.uniform(-0.2, 0.2) + scale_factor
+        v_scale = random.uniform(-0.2, 0.2) + scale_factor
+
+        img = img.resize((int(h_scale * image_size[0]), int(v_scale * image_size[1])))
+
+        # offset the image by a random amount
+        offset_limit = 50
+        offset = (random.randint(-offset_limit, offset_limit), random.randint(-offset_limit, offset_limit))
+
+        bg.paste(img, offset)
+        img = bg
+
+        # random flipping
         if int(random.randint(0, 1)):
             # horizontal flip
             img = img.transpose(PIL.Image.FLIP_LEFT_RIGHT)
@@ -84,13 +105,6 @@ class ImageLoader():
 
         # random rotate
         img.rotate(random.randint(0, 359))
-
-        if random.randint(0, 5) == 0:
-            # horizontal shrink
-            img = img.resize((int(img.size[0] / 2), img.size[1]))
-        if random.randint(0, 5) == 0:
-            # vertical shrink
-            img = img.resize((img.size[0], int(img.size[1] / 2)))
 
         # display image for debugging purposes
         # img.show()

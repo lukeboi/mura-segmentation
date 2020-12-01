@@ -153,7 +153,7 @@ train_image_paths = dict(list(image_paths.items())[validation_set_length:])
 
 
 # create our image handler classes
-train_images = ImageHandler(batch_size, image_size, train_image_paths, 400, True)
+train_images = ImageHandler(batch_size, image_size, train_image_paths, 700, True)
 validation_images = ImageHandler(batch_size, image_size, validation_image_paths, validation_set_length, False)
 
 print("LEN  " + str(len(train_images)))
@@ -166,7 +166,7 @@ callbacks = [
 ]
 
 # Train the model, doing validation at the end of each epoch.
-epochs = 25
+epochs = 15
 model.fit(train_images, epochs=epochs, validation_data=validation_images, callbacks=callbacks)
 
 model.save("trained_model")
@@ -174,14 +174,19 @@ model.save("trained_model")
 validation_predictions = model.predict(validation_images)
 print(validation_predictions.shape)
 
+combined_image = pImage.new("I", (image_size[0] * 2, image_size[1] * validation_set_length))
+y = 0
+
 for i in range(0, len(validation_image_paths)):
     image = pImage.open(list(validation_image_paths.keys())[i])
     image_handler = ImageHandler(1, image_size, {list(validation_image_paths.keys())[i] : list(validation_image_paths.values())[i]}, 1, False)
     prediction = model.predict(image_handler)
     predicted_image = pImage.fromarray(np.uint8(prediction[0][:, :, 0] * 255), mode="L")
 
-    combined_image = pImage.new("I", (image_size[0] * 2, image_size[1]))
-    combined_image.paste(image, (0,0))
-    combined_image.paste(predicted_image, (image_size[0], 0))
-    combined_image.show()
-    k = input()
+    combined_image.paste(image, (0, y))
+    combined_image.paste(predicted_image, (image_size[0], y))
+    y += image_size[1]
+    print("predicting validation image number " + str(y // image_size[1]))
+
+combined_image.show()
+combined_image.save("./validation_predictions_" + str())
