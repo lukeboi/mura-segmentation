@@ -22,3 +22,5 @@ get_images_and_labels.py - loads the dataset from /body_not_body_segmented/, shu
 crawl_and_predict.py - loads the trained network, creates predictions for each image in /images_to_predict/, displays those predictions to the using using prediction_feedback_gui.py, and if the users chooses will save the accurate image/mask combo to /successful_predictions/. The user can then take these successful predictions and move them to the main dataset, /body_not_body_segmented/.
 
 prediction_feedback_gui.py - helper functions for a GUI that displays a predicted mask for a given image. The user can then draw on the mask to correct any inaccuracies and choose to save the resultant mask to be put in the dataset.
+
+All rights reserved.
