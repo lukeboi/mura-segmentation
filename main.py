@@ -21,6 +21,7 @@ from keras.models import load_model
 from tensorflow.python.keras.optimizer_v2.adam import Adam
 import numpy as np
 import realtime_augmentation
+import datetime
 
 # setup GPU
 config = tf.compat.v1.ConfigProto(gpu_options=
@@ -49,7 +50,7 @@ csv_name = "images.csv"
 num_classes = 2
 batch_size = 4
 image_size = (512, 512)
-validation_set_length = 32
+validation_set_length = 128
 
 
 # load image paths from csv file
@@ -153,23 +154,26 @@ train_image_paths = dict(list(image_paths.items())[validation_set_length:])
 
 
 # create our image handler classes
-train_images = ImageHandler(batch_size, image_size, train_image_paths, 700, True)
+train_images = ImageHandler(batch_size, image_size, train_image_paths, 2000, True)
 validation_images = ImageHandler(batch_size, image_size, validation_image_paths, validation_set_length, False)
 
 print("LEN  " + str(len(train_images)))
 
 # create our model
-model = unet()
+# model = unet()
+model = keras.models.load_model("trained_model")
 
 callbacks = [
     keras.callbacks.ModelCheckpoint("xray_segmentation.h5", save_best_only=True)
 ]
 
 # Train the model, doing validation at the end of each epoch.
-epochs = 15
+epochs = 10
 model.fit(train_images, epochs=epochs, validation_data=validation_images, callbacks=callbacks)
 
 model.save("trained_model")
+
+# model = keras.models.load_model('trained_model')
 
 validation_predictions = model.predict(validation_images)
 print(validation_predictions.shape)
@@ -189,4 +193,5 @@ for i in range(0, len(validation_image_paths)):
     print("predicting validation image number " + str(y // image_size[1]))
 
 combined_image.show()
-combined_image.save("./validation_predictions_" + str())
+# combined_image = pImage.fromarray(np.array(combined_image) * 255, mode="L")
+combined_image.save("./validation_predictions " + str(datetime.datetime.now()).replace(":", "-").replace(".", "-") + ".png", "PNG")

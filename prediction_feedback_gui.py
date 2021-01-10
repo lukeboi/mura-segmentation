@@ -5,7 +5,9 @@ from PyQt5.QtWidgets import *
 from PIL.ImageQt import ImageQt
 from PyQt5.QtCore import Qt
 from PIL import Image as pImage
+from PIL import ImageOps
 from PyQt5.QtCore import QBuffer
+import numpy as np
 
 COLORS = [
     '#000000', '#ffffff',
@@ -18,14 +20,19 @@ BRUSH_SIZES = [
 
 class Canvas(QtWidgets.QLabel):
 
-    def __init__(self):
+    # self.pixmap is the displayed overlay
+    # self.mask is the mask to be saved
+    # self.original_image is the original image
+
+    def __init__(self, predicted_mask, original_image):
         super().__init__()
-        pixmap = QtGui.QPixmap(512, 512)
-        self.setPixmap(pixmap)
+        self.mask = predicted_mask
+        self.original_image = original_image
+        self.setPixmap(self.mask_to_overlay(self.mask))
 
         self.last_x, self.last_y = None, None
         self.pen_color = QtGui.QColor('#000000')
-        self.brush_size = 4
+        self.brush_size = 32
 
     def set_pen_color(self, c):
         self.pen_color = QtGui.QColor(c)
@@ -33,13 +40,35 @@ class Canvas(QtWidgets.QLabel):
     def set_brush_size(self, s):
         self.brush_size = s
 
+    def pixel_overlay_operation(self, pixel):
+        pixel[1] = 255
+        return pixel
+
+    def mask_to_overlay(self, mask) -> QtGui.QPixmap:
+        new_img = pImage.new(mode="RGB", size=(512, 512))
+
+        # tint the original image and paste it onto our overlay
+        try:
+            self.original_image_tinted
+        except:
+            self.original_image_tinted = ImageOps.colorize(qPixmapToPILImage(self.original_image), black=(35, 0, 0), white=(255, 200, 200))
+        new_img.paste(self.original_image_tinted)
+
+        # paste "positive" area as normal
+        new_img.paste(qPixmapToPILImage(self.original_image).convert("RGB"), qPixmapToPILImage(self.mask))
+
+        qimage = QtGui.QImage(new_img.tobytes("raw", "RGB"), 512, 512, QtGui.QImage.Format_RGB888)
+        qpix = QtGui.QPixmap.fromImage(qimage)
+
+        return qpix
+
     def mouseMoveEvent(self, e):
         if self.last_x is None:  # First event.
             self.last_x = e.x()
             self.last_y = e.y()
             return  # Ignore the first time.
 
-        painter = QtGui.QPainter(self.pixmap())
+        painter = QtGui.QPainter(self.mask)
         p = painter.pen()
         p.setWidth(self.brush_size)
         p.setColor(self.pen_color)
@@ -48,6 +77,7 @@ class Canvas(QtWidgets.QLabel):
         painter.drawLine(e.x(), self.last_y, e.x(), e.y())
         painter.drawLine(self.last_x, e.y(), e.x(), e.y())
         painter.end()
+        self.setPixmap(self.mask_to_overlay(self.mask))
         self.update()
 
         # Update the origin for next time.
@@ -55,17 +85,21 @@ class Canvas(QtWidgets.QLabel):
         self.last_y = e.y()
 
     def drawImage(self, img):
-        painter = QtGui.QPainter(self.pixmap())
+        painter = QtGui.QPainter(self.mask)
         painter.drawImage(QtCore.QPoint(), img)
         painter.end()
+        self.setPixmap(self.mask_to_overlay(self.mask))
         self.update()
+
+    def setOriginalImage(self, original):
+        self.original_image = original
 
     def mouseReleaseEvent(self, e):
         self.last_x = None
         self.last_y = None
 
     def getPixMap(self):
-        return self.pixmap()
+        return self.mask
 
 
 class ImageDisplayer(QtWidgets.QLabel):
@@ -108,8 +142,16 @@ class ShowOriginalImageButton(QtWidgets.QPushButton):
         self.setText("TOGGLE ORIGINAL IMAGE OVERLAY")
 
 
-class MainWindow(QtWidgets.QMainWindow):
+class MainWindow(QMainWindow):
     save_and_move_image = bool
+
+    def keyPressEvent(self, event):
+        print("key")
+        if event.key() == QtCore.Qt.Key_Comma:
+            self.save_button_press()
+        elif event.key() == QtCore.Qt.Key_Period:
+            self.close()
+        event.accept()
 
     def __init__(self, p_img, o_img):
         super().__init__()
@@ -124,9 +166,9 @@ class MainWindow(QtWidgets.QMainWindow):
         canvas_area.setLayout(canvas_area_layout)
         canvas_area_layout.setContentsMargins(0, 0, 0, 0)
 
-        # original image static display
-        self.original_image_display = ImageDisplayer(o_img)
-        canvas_area_layout.addWidget(self.original_image_display)
+        # original mask image static display
+        self.original_image_display = ImageDisplayer(p_img)
+        # canvas_area_layout.addWidget(self.original_image_display)
 
         # original image overlay display, hidden by default
         self.original_image_overlay = ImageDisplayer(o_img)
@@ -134,8 +176,8 @@ class MainWindow(QtWidgets.QMainWindow):
         canvas_area_layout.addWidget(self.original_image_overlay)
 
         # prediction canvas display/editor
-        self.canvas = Canvas()
-        self.canvas.drawImage(p_img)
+        self.canvas = Canvas(p_img, o_img)
+        # self.canvas.drawImage(p_img)
         canvas_area_layout.addWidget(self.canvas)
 
         #
@@ -241,7 +283,7 @@ class UserImageFeedbackWindow:
         app.exec_()
 
         # convert edited image to PIL image format
-        self.edited_image = qPixmapToPILImage(self.window.canvas.getPixMap().toImage())
+        self.edited_image = qPixmapToPILImage(self.window.canvas.getPixMap())
 
     def get_edited_image(self):
         return self.edited_image

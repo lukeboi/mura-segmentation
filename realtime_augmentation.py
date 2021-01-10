@@ -5,10 +5,11 @@ from PIL import Image as pImage
 import PIL
 from tensorflow.keras.preprocessing.image import load_img
 import numpy as np
-
+import re
 
 class ImageLoader():
     def __init__(self, image_size, image_paths, perform_augmentations=True):
+        random.seed()
         self.perform_augmentations = perform_augmentations
         self.image_size = image_size
         self.images = image_paths
@@ -20,6 +21,7 @@ class ImageLoader():
         seeds = []
         for i in range(0, batch_size):
             i = random.choice(list(self.images.items()))
+            # print(re.findall('\d+', i[0])[0])
             batch_input_img_paths.append(i[0])
             batch_target_img_paths.append(i[1])
             seeds.append(random.randint(0, 10000))
@@ -27,7 +29,7 @@ class ImageLoader():
         x = np.zeros((batch_size,) + self.image_size + (1,), dtype="float32")
         for j, path in enumerate(batch_input_img_paths):
             img = pImage.open(path)
-            img = self.perform_augmentation(img, seeds[j], self.image_size)
+            img = self.perform_augmentation(img, seeds[j], self.image_size, is_mask=False)
 
             # pad the image to 512
             img_arr = np.array(img)
@@ -46,7 +48,7 @@ class ImageLoader():
             threshold = 128
             img = img.point(lambda p: p > threshold and 255)
 
-            img = self.perform_augmentation(img, seeds[j], self.image_size)
+            img = self.perform_augmentation(img, seeds[j], self.image_size, is_mask=True)
 
             # pad the image to 512
             img_arr = np.array(img)
@@ -63,7 +65,7 @@ class ImageLoader():
 
         return x, y
 
-    def perform_augmentation(self, img, seed, image_size):
+    def perform_augmentation(self, img, seed, image_size, is_mask):
         random.seed(seed)
 
         # pad image to 512
@@ -105,6 +107,14 @@ class ImageLoader():
 
         # random rotate
         img.rotate(random.randint(0, 359))
+
+        # random brightness
+        if not is_mask:
+            b = random.randint(-40, 40)
+            i = np.array(img)
+            i = i + b
+            i = np.uint8(np.clip(i, 0, 255))
+            img = pImage.fromarray(i, mode="L")
 
         # display image for debugging purposes
         # img.show()

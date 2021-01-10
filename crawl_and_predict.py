@@ -77,8 +77,8 @@ for i in all_images:
 
     # normalize colors to all black and all white
     predicted_image = pImage.fromarray(np.uint8(prediction[0, :, :, 0] * 255), mode="L")
-    # predicted_image = np.array(predicted_image)
-    # predicted_image = pImage.fromarray(np.uint8((predicted_image) * 1.4), mode="L")
+    predicted_image = np.array(predicted_image)
+    predicted_image = pImage.fromarray(np.uint8((predicted_image) * 1), mode="L")
 
 
     # load original image for displaying
