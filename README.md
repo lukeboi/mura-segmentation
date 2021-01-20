@@ -23,6 +23,8 @@ crawl_and_predict.py - loads the trained network, creates predictions for each i
 
 prediction_feedback_gui.py - helper functions for a GUI that displays a predicted mask for a given image. The user can then draw on the mask to correct any inaccuracies and choose to save the resultant mask to be put in the dataset.
 
-augmentation_generation.py - unused
+realtime_augmentation.py - image loader. loads images as defined in images.csv, augments them randomly (scale, offset, flipping, rotation, brightness, etc) and defines a class to handle images as defined by main.py
+
+augmentation_generation.py - unused. it was a prior (much worse) attempt at augmentation.
 
 All rights reserved.
