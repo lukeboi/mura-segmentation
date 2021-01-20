@@ -1,6 +1,6 @@
 # Mura X-Ray Segmentation Project
 
-This project is an implementation of the Unet Image Segmenetation CNN for use on the Stanford Mura Dataset. The model is trained to segment between the body and not body parts of an X-Ray image. The project uses Keras and Tensorflow for ML and uses PyQt for a training feedback GUI. I can't include the full dataset and segmentations in this github respository (due to both storage and licenscing constraints), but here's a few examples of what my trained model does:
+This project is an implementation of the Unet Image Segmenetation CNN for use on the Stanford Mura Dataset. The model is trained to segment between the body and not body parts of an X-Ray image. The project uses Keras and Tensorflow for ML and uses PyQt for a training feedback GUI. I can't include the full dataset and segmentations in this github respository (due to both storage and licensing constraints), but here's a few examples of what my trained model does:
 
 Input Image | Trained Network Output
 ----------- | ------------------
@@ -15,9 +15,9 @@ All the code in this reposotory was written by yours truly. I worked on this pro
 
 Please note, I have yet to organize this code. There's magic numbers and randomly commented out blocks of code everywhere. <ins>**If you're a recruiter and you'd like to see a less rough-around-the-edges codebase, take a look [here](https://github.com/lukeboi/guitar-actuator).**</ins> Someday when I'm less busy I'll go through and clean things up. In the meantime, here's an overview of what each script does:
 
-main.py - the primary training script. Defines the model, loads the dataset (as defined in images.csv by get_images_and_labels.py), trains the network (takes overnight on my 1650ti), displays validation results to the user, and saves the network output to disk.
+main.py - the primary training script. Defines the model, loads the dataset (as defined in images.csv by get_images_and_labels.py), trains the network (takes overnight on my 1650ti), displays validation results to the user, and saves the trained network output to disk.
 
-get_images_and_labels.py - loads the dataset from /body_not_body_segmented/, shuffles the order, and saves the resulting image/mask map to images.csv
+get_images_and_labels.py - loads the dataset, stored in /body_not_body_segmented/, shuffles the order, and saves the resulting image/mask map to images.csv
 
 crawl_and_predict.py - loads the trained network, creates predictions for each image in /images_to_predict/, displays those predictions to the using using prediction_feedback_gui.py, and if the users chooses will save the accurate image/mask combo to /successful_predictions/. The user can then take these successful predictions and move them to the main dataset, /body_not_body_segmented/.
 
