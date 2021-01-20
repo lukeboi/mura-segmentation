@@ -23,4 +23,6 @@ crawl_and_predict.py - loads the trained network, creates predictions for each i
 
 prediction_feedback_gui.py - helper functions for a GUI that displays a predicted mask for a given image. The user can then draw on the mask to correct any inaccuracies and choose to save the resultant mask to be put in the dataset.
 
+augmentation_generation.py - unused
+
 All rights reserved.
