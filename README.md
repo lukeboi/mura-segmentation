@@ -2,11 +2,8 @@
 
 This project is an implementation of the Unet Image Segmenetation CNN for use on the Stanford Mura Dataset. The model is trained to segment between the body and not body parts of an X-Ray image. The project uses Keras and Tensorflow for ML and uses PyQt for a training feedback GUI. I can't include the full dataset and segmentations in this github respository (due to both storage and licensing constraints), but here's a few examples of what my trained model does:
 
-Input Image | Trained Network Output
------------ | ------------------
-![input 1](https://lukefarritor.com/content/images/2021/01/image1.png) | ![output_1](https://lukefarritor.com/content/images/2021/01/image1-labeled.png)
-![input 2](https://lukefarritor.com/content/images/2021/01/image1-1-.png) | ![output_2](https://lukefarritor.com/content/images/2021/01/image1-labeled-1-.png)
-![input 3](https://lukefarritor.com/content/images/2021/01/image2.png) | ![output_3](https://lukefarritor.com/content/images/2021/01/image2-labeled.png)
+Input image on left, trained network output on right
+![example_image](https://lukefarritor.com/img/mura_example.png)
 
 All the code in this reposotory was written by yours truly. I worked on this project independently for Eric Psota as an undergraduate researcher at UNL. Dr. Psota provided general direction and advice on a weekly basis and also helped me on the occasion I was stuck or confused by Tensorflow's Documentation. We originally planned to use the segmented dataset as part of a larger project relating to Radiology. However, for reasons unrelated to this project, Dr. Psota left UNL in Jan 2021. There's a good chance I'll continue the project on my own, but as of this writing I'm not sure. For the time being, I'm making this repo public for two reasons:
 
